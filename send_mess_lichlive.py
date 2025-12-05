@@ -572,39 +572,39 @@ def capture_html_screenshot(html_file, output_image):
     chrome_options.add_argument('--window-size=1920,1080')
     chrome_options.add_argument('--disable-gpu')
     
-    # --- BẮT ĐẦU ĐOẠN SỬA LỖI ---
+    driver = None
     try:
-        # 1. Tải driver về và lấy đường dẫn
-        driver_path = ChromeDriverManager().install()
-        
-        # 2. Sửa lỗi nếu đường dẫn trỏ vào file text 'THIRD_PARTY_NOTICES'
-        if "THIRD_PARTY_NOTICES" in driver_path:
-            driver_dir = os.path.dirname(driver_path)
-            driver_path = os.path.join(driver_dir, "chromedriver")
-        
-        # 3. Cấp quyền thực thi (quan trọng cho Linux/GitHub Actions)
-        if os.name != 'nt': # Nếu không phải Windows
-            try:
-                os.chmod(driver_path, 0o755)
-            except Exception as e:
-                print(f"Cảnh báo chmod: {e}")
+        # 1. Tải driver
+        path = ChromeDriverManager().install()
+        print(f"Original path from manager: {path}")
 
-        # 4. Khởi tạo Service với đường dẫn đã sửa
-        service = Service(driver_path)
+        # 2. XỬ LÝ LỖI PATH (Logic quan trọng)
+        # Nếu đường dẫn trỏ vào file text, ta trỏ lại vào file thực thi
+        if "THIRD_PARTY_NOTICES" in path:
+            folder = os.path.dirname(path)
+            path = os.path.join(folder, "chromedriver")
+        
+        print(f"Fixed path: {path}")
+
+        # 3. Cấp quyền thực thi (Bắt buộc trên Linux)
+        if os.name != 'nt':
+            try:
+                os.chmod(path, 0o755)
+            except Exception as e:
+                print(f"Warning chmod: {e}")
+
+        # 4. Khởi tạo
+        service = Service(path)
         driver = webdriver.Chrome(service=service, options=chrome_options)
         
-    except Exception as e:
-        print(f"❌ Lỗi khởi tạo Chrome Driver: {e}")
-        return False
-    # --- KẾT THÚC ĐOẠN SỬA LỖI ---
-    
-    try:
+        # 5. Load file HTML
         html_path = f"file:///{os.path.abspath(html_file).replace(os.sep, '/')}"
         driver.get(html_path)
-        time.sleep(3)
+        time.sleep(3) # Đợi render
         
+        # 6. Resize và chụp
         total_height = driver.execute_script("return document.body.scrollHeight")
-        driver.set_window_size(1920, total_height)
+        driver.set_window_size(1920, max(total_height, 800))
         time.sleep(2)
         
         driver.save_screenshot(output_image)
@@ -612,12 +612,17 @@ def capture_html_screenshot(html_file, output_image):
         return True
         
     except Exception as e:
-        print(f"❌ Lỗi khi chụp ảnh: {e}")
+        print(f"❌ Lỗi chụp ảnh: {e}")
+        # In chi tiết lỗi để debug nếu cần
+        import traceback
+        traceback.print_exc()
         return False
     finally:
-        # Kiểm tra nếu driver đã được khởi tạo thì mới quit
-        if 'driver' in locals():
-            driver.quit()
+        if driver:
+            try:
+                driver.quit()
+            except:
+                pass
 
 def send_all_to_lark_webhook(image_keys_data, total_df):
     """Gửi tất cả ảnh cùng lúc vào Lark"""
