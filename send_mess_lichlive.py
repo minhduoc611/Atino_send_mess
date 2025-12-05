@@ -624,6 +624,33 @@ def capture_html_screenshot(html_file, output_image):
             except:
                 pass
 
+# ==================== GỬI VÀO LARK ====================
+def upload_image_to_lark(image_path):
+    """Upload ảnh lên Lark"""
+    print(f"Upload: {image_path}")
+    
+    token = get_tenant_access_token()
+    if not token:
+        return None
+    
+    url = "https://open.larksuite.com/open-apis/im/v1/images"
+    
+    with open(image_path, 'rb') as f:
+        files = {'image': (os.path.basename(image_path), f, 'image/png')}
+        data = {'image_type': 'message'}
+        headers = {'Authorization': f'Bearer {token}'}
+        
+        response = requests.post(url, headers=headers, data=data, files=files)
+        result = response.json()
+        
+        if result.get('code') == 0:
+            image_key = result['data']['image_key']
+            print(f"✓ Image key: {image_key}")
+            return image_key
+        else:
+            print(f"❌ Upload thất bại: {result}")
+            return None
+
 def send_all_to_lark_webhook(image_keys_data, total_df):
     """Gửi tất cả ảnh cùng lúc vào Lark"""
     print("Đang gửi tin nhắn vào Lark...")
