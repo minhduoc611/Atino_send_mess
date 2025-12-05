@@ -15,7 +15,7 @@ app_id = "cli_a8620f964a38d02f"
 app_secret = "G3FdlSvmTAXZYX8SBZtfpckHUiWUCO4h"
 app_token = "AVY3bPgpja7Xwks2ht6lNGsnglc"
 table_id = "tblwHEox2atpjNkp"
-webhook_url = "https://open.larksuite.com/open-apis/bot/v2/hook/ab412e53-f86f-4866-96f9-158fe9bd2e9c"
+webhook_url = "https://open.larksuite.com/open-apis/bot/v2/hook/175214ad-f698-45a6-89d3-45ff7453429d"
 
 # LẤY THÁNG HIỆN TẠI VÀ NGÀY HÔM QUA
 now = datetime.now()
