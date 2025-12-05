@@ -560,6 +560,7 @@ def create_html_gantt(df, channel_name):
     return html
 
 # ==================== CHỤP ẢNH MÀN HÌNH ====================
+# ==================== CHỤP ẢNH MÀN HÌNH ====================
 def capture_html_screenshot(html_file, output_image):
     """Chụp ảnh màn hình từ file HTML"""
     print(f"Đang chụp ảnh: {html_file}")
@@ -571,8 +572,31 @@ def capture_html_screenshot(html_file, output_image):
     chrome_options.add_argument('--window-size=1920,1080')
     chrome_options.add_argument('--disable-gpu')
     
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    # --- BẮT ĐẦU ĐOẠN SỬA LỖI ---
+    try:
+        # 1. Tải driver về và lấy đường dẫn
+        driver_path = ChromeDriverManager().install()
+        
+        # 2. Sửa lỗi nếu đường dẫn trỏ vào file text 'THIRD_PARTY_NOTICES'
+        if "THIRD_PARTY_NOTICES" in driver_path:
+            driver_dir = os.path.dirname(driver_path)
+            driver_path = os.path.join(driver_dir, "chromedriver")
+        
+        # 3. Cấp quyền thực thi (quan trọng cho Linux/GitHub Actions)
+        if os.name != 'nt': # Nếu không phải Windows
+            try:
+                os.chmod(driver_path, 0o755)
+            except Exception as e:
+                print(f"Cảnh báo chmod: {e}")
+
+        # 4. Khởi tạo Service với đường dẫn đã sửa
+        service = Service(driver_path)
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        
+    except Exception as e:
+        print(f"❌ Lỗi khởi tạo Chrome Driver: {e}")
+        return False
+    # --- KẾT THÚC ĐOẠN SỬA LỖI ---
     
     try:
         html_path = f"file:///{os.path.abspath(html_file).replace(os.sep, '/')}"
@@ -588,37 +612,12 @@ def capture_html_screenshot(html_file, output_image):
         return True
         
     except Exception as e:
-        print(f"❌ Lỗi: {e}")
+        print(f"❌ Lỗi khi chụp ảnh: {e}")
         return False
     finally:
-        driver.quit()
-
-# ==================== GỬI VÀO LARK ====================
-def upload_image_to_lark(image_path):
-    """Upload ảnh lên Lark"""
-    print(f"Upload: {image_path}")
-    
-    token = get_tenant_access_token()
-    if not token:
-        return None
-    
-    url = "https://open.larksuite.com/open-apis/im/v1/images"
-    
-    with open(image_path, 'rb') as f:
-        files = {'image': (os.path.basename(image_path), f, 'image/png')}
-        data = {'image_type': 'message'}
-        headers = {'Authorization': f'Bearer {token}'}
-        
-        response = requests.post(url, headers=headers, data=data, files=files)
-        result = response.json()
-        
-        if result.get('code') == 0:
-            image_key = result['data']['image_key']
-            print(f"✓ Image key: {image_key}")
-            return image_key
-        else:
-            print(f"❌ Upload thất bại: {result}")
-            return None
+        # Kiểm tra nếu driver đã được khởi tạo thì mới quit
+        if 'driver' in locals():
+            driver.quit()
 
 def send_all_to_lark_webhook(image_keys_data, total_df):
     """Gửi tất cả ảnh cùng lúc vào Lark"""
