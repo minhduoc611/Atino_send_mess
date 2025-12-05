@@ -321,6 +321,23 @@ def send_image_to_webhook(image_key, webhook_url):
                     "tag": "img",
                     "img_key": image_key,
                     "mode": "fit_horizontal"
+                },
+                {
+                    "tag": "hr"
+                },
+                {
+                    "tag": "action",
+                    "actions": [
+                        {
+                            "tag": "button",
+                            "text": {
+                                "tag": "plain_text",
+                                "content": "📋 Xem chi tiết trong Lark Base"
+                            },
+                            "type": "primary",
+                            "url": "https://atino-vietnam.sg.larksuite.com/base/AVY3bPgpja7Xwks2ht6lNGsnglc?table=tblwHEox2atpjNkp&view=vew0Cl5yD7"
+                        }
+                    ]
                 }
             ]
         }
