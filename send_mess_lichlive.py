@@ -637,42 +637,72 @@ def send_all_to_lark_webhook(image_keys_data, total_df):
     total_revenue = total_df['Doanh thu'].sum()
     total_sessions = len(total_df)
     
-    # Tạo content
-    content = [
-        [{"tag": "text", "text": f"Lịch Livestream - Tháng {TARGET_MONTH}/{TARGET_YEAR}\n"}],
-        [{"tag": "text", "text": f"Từ ngày 1/{TARGET_MONTH} đến {CURRENT_DAY}/{TARGET_MONTH}\n"}],
-        [{"tag": "text", "text": f"Tổng doanh thu: {total_revenue:,.0f} VNĐ\n"}],
-        [{"tag": "text", "text": f"Tổng phiên live: {total_sessions}\n"}],
-        [{"tag": "a", "text": "📋 Xem chi tiết trong Lark Base", "href": "https://atino-vietnam.sg.larksuite.com/base/AVY3bPgpja7Xwks2ht6lNGsnglc?table=tblwHEox2atpjNkp&view=vew0Cl5yD7"}],
-        [{"tag": "text", "text": "\n"}]
+    # Tạo elements cho card
+    elements = [
+        {
+            "tag": "div",
+            "text": {
+                "tag": "lark_md",
+                "content": f"**Lịch Livestream - Tháng {TARGET_MONTH}/{TARGET_YEAR}**\n\nTừ ngày 1/{TARGET_MONTH} đến {CURRENT_DAY}/{TARGET_MONTH}\n\nTổng doanh thu: **{total_revenue:,.0f} VNĐ**\nTổng phiên live: **{total_sessions}**"
+            }
+        },
+        {
+            "tag": "hr"
+        }
     ]
     
     # Thêm tất cả ảnh
     for data in image_keys_data:
-        content.append([{"tag": "text", "text": f"\n{data['channel']}\n"}])
-        content.append([{
+        elements.append({
+            "tag": "div",
+            "text": {
+                "tag": "plain_text",
+                "content": f"\n{data['channel']}"
+            }
+        })
+        elements.append({
             "tag": "img",
-            "image_key": data['image_key'],
-            "width": 1920,
-            "height": 800
-        }])
+            "img_key": data['image_key'],
+            "mode": "fit_horizontal"
+        })
+    
+    # Thêm nút ở cuối
+    elements.append({
+        "tag": "hr"
+    })
+    elements.append({
+        "tag": "action",
+        "actions": [
+            {
+                "tag": "button",
+                "text": {
+                    "tag": "plain_text",
+                    "content": "📋 Xem chi tiết trong Lark Base"
+                },
+                "type": "primary",
+                "url": "https://atino-vietnam.sg.larksuite.com/base/AVY3bPgpja7Xwks2ht6lNGsnglc?table=tblwHEox2atpjNkp&view=vew0Cl5yD7"
+            }
+        ]
+    })
     
     message = {
-        "msg_type": "post",
-        "content": {
-            "post": {
-                "vi_vn": {
-                    "title": f"Lịch Livestream - Tháng {TARGET_MONTH}/{TARGET_YEAR}",
-                    "content": content
+        "msg_type": "interactive",
+        "card": {
+            "header": {
+                "template": "blue",
+                "title": {
+                    "tag": "plain_text",
+                    "content": f"📊 Lịch Livestream - Tháng {TARGET_MONTH}/{TARGET_YEAR}"
                 }
-            }
+            },
+            "elements": elements
         }
     }
     
     response = requests.post(webhook_url, json=message)
     result = response.json()
     
-    if result.get('code') == 0:
+    if result.get('code') == 0 or result.get('StatusCode') == 0:
         print("✓ Gửi tin nhắn thành công!")
         return True
     else:
