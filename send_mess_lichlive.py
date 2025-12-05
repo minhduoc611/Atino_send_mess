@@ -3,7 +3,23 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 import time
+import os
+import pytz
+from datetime import datetime, timedelta
 import imgkit
+# Set timezone Vietnam
+os.environ['TZ'] = 'Asia/Ho_Chi_Minh'
+time.tzset() if hasattr(time, 'tzset') else None
+
+# Múi giờ Việt Nam
+VN_TZ = pytz.timezone('Asia/Ho_Chi_Minh')
+
+# Sửa phần lấy thời gian hiện tại
+now = datetime.now(VN_TZ)
+TARGET_MONTH = now.month
+TARGET_YEAR = now.year
+CURRENT_DAY = now.day - 1
+
 
 # ==================== CẤU HÌNH ====================
 app_id = "cli_a8620f964a38d02f"
