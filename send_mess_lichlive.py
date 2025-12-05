@@ -26,7 +26,12 @@ app_id = "cli_a8620f964a38d02f"
 app_secret = "G3FdlSvmTAXZYX8SBZtfpckHUiWUCO4h"
 app_token = "AVY3bPgpja7Xwks2ht6lNGsnglc"
 table_id = "tblwHEox2atpjNkp"
-webhook_url = "https://open.larksuite.com/open-apis/bot/v2/hook/175214ad-f698-45a6-89d3-45ff7453429d"
+
+# DANH SÁCH CÁC WEBHOOK - GỬI VÀO 2 GROUPS
+webhook_urls = [
+    "https://open.larksuite.com/open-apis/bot/v2/hook/ec2a7b8c-197a-42a9-8125-870d7f602ccb",
+    "https://open.larksuite.com/open-apis/bot/v2/hook/bf24d3f9-68f6-4fd3-9b0f-35e75c0b6c87"
+]
 
 # Tháng hiện tại
 now = datetime.now()
@@ -630,8 +635,8 @@ def upload_image_to_lark(image_path):
             print(f"❌ Upload thất bại: {result}")
             return None
 
-def send_all_to_lark_webhook(image_keys_data, total_df):
-    """Gửi tất cả ảnh cùng lúc vào Lark"""
+def send_all_to_lark_webhooks(image_keys_data, total_df):
+    """Gửi tất cả ảnh cùng lúc vào NHIỀU Lark webhooks"""
     print("Đang gửi tin nhắn vào Lark...")
     
     total_revenue = total_df['Doanh thu'].sum()
@@ -699,15 +704,24 @@ def send_all_to_lark_webhook(image_keys_data, total_df):
         }
     }
     
-    response = requests.post(webhook_url, json=message)
-    result = response.json()
+    # Gửi vào từng webhook
+    success_count = 0
+    for idx, webhook_url in enumerate(webhook_urls, 1):
+        try:
+            response = requests.post(webhook_url, json=message)
+            result = response.json()
+            
+            if result.get('code') == 0 or result.get('StatusCode') == 0:
+                print(f"   ✓ Webhook {idx}: Gửi thành công!")
+                success_count += 1
+            else:
+                print(f"   ✗ Webhook {idx}: Lỗi - {result}")
+        except Exception as e:
+            print(f"   ✗ Webhook {idx}: Exception - {e}")
     
-    if result.get('code') == 0 or result.get('StatusCode') == 0:
-        print("✓ Gửi tin nhắn thành công!")
-        return True
-    else:
-        print(f"❌ Gửi thất bại: {result}")
-        return False
+    print(f"\n   → Đã gửi thành công vào {success_count}/{len(webhook_urls)} group chats")
+    return success_count > 0
+
 # ==================== MAIN ====================
 if __name__ == "__main__":
     print("=" * 80)
@@ -770,12 +784,12 @@ if __name__ == "__main__":
             except:
                 pass
     
-    # 4. Gửi tất cả ảnh cùng lúc
+    # 4. Gửi tất cả ảnh cùng lúc vào NHIỀU webhooks
     if image_keys_data:
         print("\n" + "=" * 80)
-        print("GỬI TIN NHẮN VÀO LARK")
+        print(f"GỬI TIN NHẮN VÀO {len(webhook_urls)} GROUP CHATS")
         print("=" * 80)
-        send_all_to_lark_webhook(image_keys_data, df)
+        send_all_to_lark_webhooks(image_keys_data, df)
     
     print("\n" + "=" * 80)
     print("HOÀN THÀNH!")
