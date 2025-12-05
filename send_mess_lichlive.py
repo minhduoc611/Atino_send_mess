@@ -560,7 +560,6 @@ def create_html_gantt(df, channel_name):
     return html
 
 # ==================== CHỤP ẢNH MÀN HÌNH ====================
-# ==================== CHỤP ẢNH MÀN HÌNH ====================
 def capture_html_screenshot(html_file, output_image):
     """Chụp ảnh màn hình từ file HTML"""
     print(f"Đang chụp ảnh: {html_file}")
@@ -572,39 +571,16 @@ def capture_html_screenshot(html_file, output_image):
     chrome_options.add_argument('--window-size=1920,1080')
     chrome_options.add_argument('--disable-gpu')
     
-    driver = None
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    
     try:
-        # 1. Tải driver
-        path = ChromeDriverManager().install()
-        print(f"Original path from manager: {path}")
-
-        # 2. XỬ LÝ LỖI PATH (Logic quan trọng)
-        # Nếu đường dẫn trỏ vào file text, ta trỏ lại vào file thực thi
-        if "THIRD_PARTY_NOTICES" in path:
-            folder = os.path.dirname(path)
-            path = os.path.join(folder, "chromedriver")
-        
-        print(f"Fixed path: {path}")
-
-        # 3. Cấp quyền thực thi (Bắt buộc trên Linux)
-        if os.name != 'nt':
-            try:
-                os.chmod(path, 0o755)
-            except Exception as e:
-                print(f"Warning chmod: {e}")
-
-        # 4. Khởi tạo
-        service = Service(path)
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        
-        # 5. Load file HTML
         html_path = f"file:///{os.path.abspath(html_file).replace(os.sep, '/')}"
         driver.get(html_path)
-        time.sleep(3) # Đợi render
+        time.sleep(3)
         
-        # 6. Resize và chụp
         total_height = driver.execute_script("return document.body.scrollHeight")
-        driver.set_window_size(1920, max(total_height, 800))
+        driver.set_window_size(1920, total_height)
         time.sleep(2)
         
         driver.save_screenshot(output_image)
@@ -612,17 +588,10 @@ def capture_html_screenshot(html_file, output_image):
         return True
         
     except Exception as e:
-        print(f"❌ Lỗi chụp ảnh: {e}")
-        # In chi tiết lỗi để debug nếu cần
-        import traceback
-        traceback.print_exc()
+        print(f"❌ Lỗi: {e}")
         return False
     finally:
-        if driver:
-            try:
-                driver.quit()
-            except:
-                pass
+        driver.quit()
 
 # ==================== GỬI VÀO LARK ====================
 def upload_image_to_lark(image_path):
