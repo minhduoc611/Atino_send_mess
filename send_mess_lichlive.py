@@ -111,7 +111,9 @@ def excel_date_to_datetime(excel_date):
     return excel_epoch + timedelta(days=excel_date)
 
 def process_livestream_data(records):
+    VN_TZ = pytz.timezone('Asia/Ho_Chi_Minh')
     data_list = []
+    
     for record in records:
         fields = record.get('fields', {})
         
@@ -119,11 +121,16 @@ def process_livestream_data(records):
         if not timestamp_start:
             continue
         
-        live_start = datetime.fromtimestamp(timestamp_start / 1000)
+        # Convert timestamp to Vietnam timezone
+        live_start = datetime.fromtimestamp(timestamp_start / 1000, VN_TZ)
         
         excel_date_end = fields.get('Thời gian kết thúc')
         if not excel_date_end:
             continue
+        
+        # Convert Excel date to Vietnam timezone
+        live_end_utc = excel_date_to_datetime(excel_date_end)
+        live_end = live_end_utc.replace(tzinfo=pytz.UTC).astimezone(VN_TZ)
         
         live_end = excel_date_to_datetime(excel_date_end)
         
