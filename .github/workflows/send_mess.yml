@@ -2,9 +2,8 @@ name: Livestream Gantt Chart Generator
 
 on:
   schedule:
-    # Run daily at 8:00 AM UTC+7 (01:00 UTC)
     - cron: '0 1 * * *'
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
   generate-and-send:
@@ -19,26 +18,15 @@ jobs:
       with:
         python-version: '3.10'
     
-    - name: Install dependencies
+    - name: Install wkhtmltopdf
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wkhtmltopdf
+    
+    - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    
-    - name: Install Chrome
-      uses: browser-actions/setup-chrome@latest
-      with:
-        chrome-version: stable
-    
-    # --- CHANGED SECTION START ---
-    # Replaced the broken manual script with this Action
-    # This automatically finds the correct driver for the installed Chrome
-    - name: Install ChromeDriver
-      uses: nanasess/setup-chromedriver@v2
-      with:
-        # Optional: compatible with browser-actions/setup-chrome
-        # changes the driver version based on the installed browser
-        chrome-version: stable 
-    # --- CHANGED SECTION END ---
     
     - name: Run send_mess_doanhthu.py
       run: python send_mess_doanhthu.py
@@ -48,10 +36,12 @@ jobs:
       run: python send_mess_lichlive.py
       continue-on-error: true
     
-    - name: Upload artifacts (optional)
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: gantt-charts
-        path: gantt_*.html
+        path: |
+          gantt_*.html
+          gantt_*.png
         retention-days: 7
