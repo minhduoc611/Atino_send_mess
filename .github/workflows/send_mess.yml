@@ -1,0 +1,46 @@
+name: Livestream Gantt Chart Generator
+
+on:
+  schedule:
+    # Chạy hàng ngày lúc 8:00 sáng (UTC+7 = 01:00 UTC)
+    - cron: '0 1 * * *'
+  workflow_dispatch:  # Cho phép chạy manual
+
+jobs:
+  generate-and-send:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Install Chrome and ChromeDriver
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y chromium-browser chromium-chromedriver
+    
+    - name: Run send_mess_doanhthu.py
+      run: python send_mess_doanhthu.py
+      continue-on-error: true
+    
+    - name: Run send_mess_lichlive.py
+      run: python send_mess_lichlive.py
+      continue-on-error: true
+    
+    - name: Upload artifacts (optional)
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: gantt-charts
+        path: gantt_*.html
+        retention-days: 7
