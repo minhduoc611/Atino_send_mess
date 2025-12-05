@@ -15,7 +15,12 @@ app_id = "cli_a8620f964a38d02f"
 app_secret = "G3FdlSvmTAXZYX8SBZtfpckHUiWUCO4h"
 app_token = "AVY3bPgpja7Xwks2ht6lNGsnglc"
 table_id = "tblwHEox2atpjNkp"
-webhook_url = "https://open.larksuite.com/open-apis/bot/v2/hook/175214ad-f698-45a6-89d3-45ff7453429d"
+
+# DANH SÁCH CÁC WEBHOOK - GỬI VÀO 2 GROUPS
+webhook_urls = [
+    "https://open.larksuite.com/open-apis/bot/v2/hook/175214ad-f698-45a6-89d3-45ff7453429d",
+    "https://open.larksuite.com/open-apis/bot/v2/hook/bf24d3f9-68f6-4fd3-9b0f-35e75c0b6c87"
+]
 
 # LẤY THÁNG HIỆN TẠI VÀ NGÀY HÔM QUA
 now = datetime.now()
@@ -299,8 +304,8 @@ def upload_image_to_lark(image_path):
         else:
             raise Exception(f"Lỗi upload ảnh: {result}")
 
-def send_image_to_webhook(image_key, webhook_url):
-    """Gửi ảnh vào group chat qua webhook"""
+def send_image_to_webhooks(image_key, webhook_urls):
+    """Gửi ảnh vào NHIỀU group chats qua webhooks"""
     
     payload = {
         "msg_type": "interactive",
@@ -343,13 +348,22 @@ def send_image_to_webhook(image_key, webhook_url):
         }
     }
     
-    response = requests.post(webhook_url, json=payload)
-    result = response.json()
+    # Gửi vào từng webhook
+    success_count = 0
+    for idx, webhook_url in enumerate(webhook_urls, 1):
+        try:
+            response = requests.post(webhook_url, json=payload)
+            result = response.json()
+            
+            if result.get('StatusCode') == 0 or result.get('code') == 0:
+                print(f"   ✓ Webhook {idx}: Gửi thành công!")
+                success_count += 1
+            else:
+                print(f"   ✗ Webhook {idx}: Lỗi - {result}")
+        except Exception as e:
+            print(f"   ✗ Webhook {idx}: Exception - {e}")
     
-    if result.get('StatusCode') == 0 or result.get('code') == 0:
-        print("✓ Đã gửi ảnh vào group chat thành công!")
-    else:
-        print(f"Lỗi gửi webhook: {result}")
+    print(f"\n   → Đã gửi thành công vào {success_count}/{len(webhook_urls)} group chats")
 
 def main():
     print("="*60)
@@ -389,8 +403,8 @@ def main():
     print(f"   ✓ Image key: {image_key}")
     
     # Gửi webhook
-    print("7. Đang gửi vào group chat...")
-    send_image_to_webhook(image_key, webhook_url)
+    print(f"7. Đang gửi vào {len(webhook_urls)} group chats...")
+    send_image_to_webhooks(image_key, webhook_urls)
     
     print("\n" + "="*60)
     print("✓ HOÀN THÀNH!")
