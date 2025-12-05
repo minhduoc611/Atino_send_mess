@@ -642,7 +642,9 @@ def send_all_to_lark_webhook(image_keys_data, total_df):
         [{"tag": "text", "text": f"Lịch Livestream - Tháng {TARGET_MONTH}/{TARGET_YEAR}\n"}],
         [{"tag": "text", "text": f"Từ ngày 1/{TARGET_MONTH} đến {CURRENT_DAY}/{TARGET_MONTH}\n"}],
         [{"tag": "text", "text": f"Tổng doanh thu: {total_revenue:,.0f} VNĐ\n"}],
-        [{"tag": "text", "text": f"Tổng phiên live: {total_sessions}\n\n"}]
+        [{"tag": "text", "text": f"Tổng phiên live: {total_sessions}\n"}],
+        [{"tag": "a", "text": "📋 Xem chi tiết trong Lark Base", "href": "https://atino-vietnam.sg.larksuite.com/base/AVY3bPgpja7Xwks2ht6lNGsnglc?table=tblwHEox2atpjNkp&view=vew0Cl5yD7"}],
+        [{"tag": "text", "text": "\n"}]
     ]
     
     # Thêm tất cả ảnh
@@ -676,7 +678,6 @@ def send_all_to_lark_webhook(image_keys_data, total_df):
     else:
         print(f"❌ Gửi thất bại: {result}")
         return False
-
 # ==================== MAIN ====================
 if __name__ == "__main__":
     print("=" * 80)
