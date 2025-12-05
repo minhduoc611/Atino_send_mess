@@ -568,23 +568,41 @@ def capture_html_screenshot(html_file, output_image):
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--window-size=1920,1080')
     chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--force-device-scale-factor=1')  # Fix scaling
+    chrome_options.add_argument('--hide-scrollbars')  # Ẩn scrollbar
     
-    # Bỏ service, dùng driver mặc định từ system
     driver = webdriver.Chrome(options=chrome_options)
     
     try:
         html_path = f"file:///{os.path.abspath(html_file).replace(os.sep, '/')}"
         driver.get(html_path)
-        time.sleep(3)
         
-        total_height = driver.execute_script("return document.body.scrollHeight")
-        driver.set_window_size(1920, total_height)
+        # Đợi font load
+        time.sleep(5)  # Tăng từ 3s lên 5s
+        
+        # Set fixed width
+        driver.set_window_size(1920, 1080)
         time.sleep(2)
         
+        # Tính toán chiều cao thực tế
+        total_height = driver.execute_script("""
+            return Math.max(
+                document.body.scrollHeight,
+                document.body.offsetHeight,
+                document.documentElement.clientHeight,
+                document.documentElement.scrollHeight,
+                document.documentElement.offsetHeight
+            );
+        """)
+        
+        # Set size với chiều cao đầy đủ + padding
+        driver.set_window_size(1920, total_height + 100)
+        time.sleep(2)
+        
+        # Chụp ảnh
         driver.save_screenshot(output_image)
-        print(f"✓ Đã lưu ảnh: {output_image}")
+        print(f"✓ Đã lưu ảnh: {output_image} (Size: 1920x{total_height + 100})")
         return True
         
     except Exception as e:
