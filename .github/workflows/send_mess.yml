@@ -2,9 +2,9 @@ name: Livestream Gantt Chart Generator
 
 on:
   schedule:
-    # Chạy hàng ngày lúc 8:00 sáng (UTC+7 = 01:00 UTC)
+    # Run daily at 8:00 AM UTC+7 (01:00 UTC)
     - cron: '0 1 * * *'
-  workflow_dispatch:  # Cho phép chạy manual
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   generate-and-send:
@@ -29,14 +29,16 @@ jobs:
       with:
         chrome-version: stable
     
+    # --- CHANGED SECTION START ---
+    # Replaced the broken manual script with this Action
+    # This automatically finds the correct driver for the installed Chrome
     - name: Install ChromeDriver
-      run: |
-        CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
-        CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION%%.*}")
-        wget -q "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
-        unzip -q chromedriver_linux64.zip
-        sudo mv chromedriver /usr/local/bin/
-        sudo chmod +x /usr/local/bin/chromedriver
+      uses: nanasess/setup-chromedriver@v2
+      with:
+        # Optional: compatible with browser-actions/setup-chrome
+        # changes the driver version based on the installed browser
+        chrome-version: stable 
+    # --- CHANGED SECTION END ---
     
     - name: Run send_mess_doanhthu.py
       run: python send_mess_doanhthu.py
