@@ -44,6 +44,12 @@ jobs:
       continue-on-error: true
       env:
         TZ: Asia/Ho_Chi_Minh
+        
+    - name: Run send_mess_review.py
+      run: python send_mess_review.py
+      continue-on-error: true
+      env:
+        TZ: Asia/Ho_Chi_Minh
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
