@@ -571,8 +571,8 @@ def capture_html_screenshot(html_file, output_image):
     chrome_options.add_argument('--window-size=1920,1080')
     chrome_options.add_argument('--disable-gpu')
     
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    # Bỏ service, dùng driver mặc định từ system
+    driver = webdriver.Chrome(options=chrome_options)
     
     try:
         html_path = f"file:///{os.path.abspath(html_file).replace(os.sep, '/')}"
