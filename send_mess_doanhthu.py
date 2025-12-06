@@ -27,7 +27,7 @@ now = datetime.now()
 yesterday = now - timedelta(days=1)
 CURRENT_MONTH = now.month
 CURRENT_YEAR = now.year
-YESTERDAY_DAY = yesterday.day
+YESTERDAY_DAY = now.day
 
 class LarkBaseAPI:
     """Class để làm việc với Lark Base API"""
