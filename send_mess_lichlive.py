@@ -18,7 +18,7 @@ VN_TZ = pytz.timezone('Asia/Ho_Chi_Minh')
 now = datetime.now(VN_TZ)
 TARGET_MONTH = now.month
 TARGET_YEAR = now.year
-CURRENT_DAY = now.day - 1
+CURRENT_DAY = now.day
 
 
 # ==================== CẤU HÌNH ====================
