@@ -37,7 +37,7 @@ webhook_urls = [
 now = datetime.now()
 TARGET_MONTH = now.month
 TARGET_YEAR = now.year
-CURRENT_DAY = now.day - 1
+CURRENT_DAY = now.day
 
 # Bảng màu pastel nhẹ nhàng
 COLORS = [
