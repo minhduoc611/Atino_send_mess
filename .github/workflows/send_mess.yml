@@ -33,11 +33,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Run send_mess_doanhthu.py
-      run: python send_mess_doanhthu.py
-      continue-on-error: true
-      env:
-        TZ: Asia/Ho_Chi_Minh
+
     
     - name: Run send_mess_lichlive.py
       run: python send_mess_lichlive.py
