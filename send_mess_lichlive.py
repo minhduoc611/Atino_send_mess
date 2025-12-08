@@ -3,10 +3,10 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 import time
+import os
 import pytz
+from datetime import datetime, timedelta
 import imgkit
-from PIL import Image
-
 # Set timezone Vietnam
 os.environ['TZ'] = 'Asia/Ho_Chi_Minh'
 time.tzset() if hasattr(time, 'tzset') else None
@@ -29,8 +29,8 @@ table_id = "tblwHEox2atpjNkp"
 
 # DANH SÁCH CÁC WEBHOOK - GỬI VÀO 2 GROUPS
 webhook_urls = [
-    "https://open.larksuite.com/open-apis/bot/v2/hook/175214ad-f698-45a6-89d3-45ff7453429d",
-
+    "https://open.larksuite.com/open-apis/bot/v2/hook/ec2a7b8c-197a-42a9-8125-870d7f602ccb",
+    "https://open.larksuite.com/open-apis/bot/v2/hook/bf24d3f9-68f6-4fd3-9b0f-35e75c0b6c87"
 ]
 
 # Tháng hiện tại
@@ -119,10 +119,6 @@ def process_livestream_data(records):
     VN_TZ = pytz.timezone('Asia/Ho_Chi_Minh')
     data_list = []
     
-    print("\n🕐 Kiểm tra múi giờ:")
-    print(f"   VN_TZ: {VN_TZ}")
-    print(f"   Thời gian hiện tại VN: {datetime.now(VN_TZ)}")
-    
     for record in records:
         fields = record.get('fields', {})
         
@@ -130,18 +126,19 @@ def process_livestream_data(records):
         if not timestamp_start:
             continue
         
-        # Convert timestamp to Vietnam timezone (GMT+7)
+        # Convert timestamp to Vietnam timezone
         live_start = datetime.fromtimestamp(timestamp_start / 1000, VN_TZ)
         
         excel_date_end = fields.get('Thời gian kết thúc')
         if not excel_date_end:
             continue
         
-        # Convert Excel date to datetime (UTC), then to Vietnam timezone (GMT+7)
+        # Convert Excel date to Vietnam timezone
         live_end_utc = excel_date_to_datetime(excel_date_end)
-        live_end = pytz.UTC.localize(live_end_utc).astimezone(VN_TZ)
+        live_end = live_end_utc.replace(tzinfo=pytz.UTC).astimezone(VN_TZ)
         
-        # Filter: only keep records in TARGET_MONTH/TARGET_YEAR
+        live_end = excel_date_to_datetime(excel_date_end)
+        
         if live_start.month != TARGET_MONTH or live_start.year != TARGET_YEAR:
             continue
         if live_start.day > CURRENT_DAY:
@@ -158,71 +155,26 @@ def process_livestream_data(records):
         
         start_hour = live_start.hour + live_start.minute / 60.0 + live_start.second / 3600.0
         
-        # Xử lý livestream xuyên đêm - TÁCH THÀNH 2 RECORD (2 DÒNG RIÊNG BIỆT)
         if live_end.day > live_start.day:
-            # RECORD 1: Từ giờ bắt đầu đến 24h (cuối ngày đầu)
-            end_hour_day1 = 24.0
-            duration_day1 = end_hour_day1 - start_hour
-            
-            data_list.append({
-                'Kênh': extract_text(fields.get('Kênh')),
-                'Tên đầy đủ': full_name,
-                'Tên ngắn': short_name,
-                'Ngày': live_start.day,
-                'Bắt đầu': live_start,
-                'Kết thúc': live_end,
-                'Giờ bắt đầu': start_hour,
-                'Giờ kết thúc': end_hour_day1,
-                'Thời lượng (giờ)': duration_day1,
-                'Doanh thu': revenue,
-                'Doanh thu (format)': format_revenue(revenue)
-            })
-            
-            # RECORD 2: Từ 0h đến giờ kết thúc (đầu ngày sau) - DÒNG MỚI
-            # Chỉ thêm nếu ngày kết thúc vẫn trong tháng và không vượt quá CURRENT_DAY
-            if (live_end.month == TARGET_MONTH and 
-                live_end.year == TARGET_YEAR and 
-                live_end.day <= CURRENT_DAY):
-                
-                end_hour_day2 = live_end.hour + live_end.minute / 60.0 + live_end.second / 3600.0
-                duration_day2 = end_hour_day2
-                
-                data_list.append({
-                    'Kênh': extract_text(fields.get('Kênh')),
-                    'Tên đầy đủ': full_name,
-                    'Tên ngắn': short_name,
-                    'Ngày': live_end.day,  # ⭐ NGÀY MỚI - hiển thị ở dòng ngày mới
-                    'Bắt đầu': live_start,
-                    'Kết thúc': live_end,
-                    'Giờ bắt đầu': 0.0,
-                    'Giờ kết thúc': end_hour_day2,
-                    'Thời lượng (giờ)': duration_day2,
-                    'Doanh thu': 0,  # Doanh thu chỉ tính ở ngày đầu
-                    'Doanh thu (format)': ''
-                })
-                
-                # Debug log cho livestream xuyên đêm
-                print(f"\n   🌙 Livestream xuyên đêm: {short_name}")
-                print(f"      Ngày {live_start.day}: {live_start.strftime('%H:%M')} → 24:00 (revenue: {format_revenue(revenue)})")
-                print(f"      Ngày {live_end.day}: 00:00 → {live_end.strftime('%H:%M')}")
+            end_hour = 24.0
+            duration = end_hour - start_hour
         else:
-            # Livestream trong cùng ngày - CHỈ 1 RECORD (1 DÒNG)
             end_hour = live_end.hour + live_end.minute / 60.0 + live_end.second / 3600.0
             duration = end_hour - start_hour
-            
-            data_list.append({
-                'Kênh': extract_text(fields.get('Kênh')),
-                'Tên đầy đủ': full_name,
-                'Tên ngắn': short_name,
-                'Ngày': live_start.day,
-                'Bắt đầu': live_start,
-                'Kết thúc': live_end,
-                'Giờ bắt đầu': start_hour,
-                'Giờ kết thúc': end_hour,
-                'Thời lượng (giờ)': duration,
-                'Doanh thu': revenue,
-                'Doanh thu (format)': format_revenue(revenue)
-            })
+        
+        data_list.append({
+            'Kênh': extract_text(fields.get('Kênh')),
+            'Tên đầy đủ': full_name,
+            'Tên ngắn': short_name,
+            'Ngày': live_start.day,
+            'Bắt đầu': live_start,
+            'Kết thúc': live_end,
+            'Giờ bắt đầu': start_hour,
+            'Giờ kết thúc': end_hour,
+            'Thời lượng (giờ)': duration,
+            'Doanh thu': revenue,
+            'Doanh thu (format)': format_revenue(revenue)
+        })
     
     return pd.DataFrame(data_list)
 
@@ -596,13 +548,10 @@ def create_html_gantt(df, channel_name):
                 left_percent = (start / 24) * 100
                 width_percent = (duration / 24) * 100
                 
-                # Chỉ hiển thị revenue nếu có
-                revenue_html = f'<span class="bar-revenue">{revenue_format}</span>' if revenue_format else ''
-                
                 html += f"""                                    <div class="live-bar" 
                                          style="left: {left_percent:.2f}%; width: {width_percent:.2f}%; background: {color};">
                                         <span class="bar-name">{name}</span>
-                                        {revenue_html}
+                                        <span class="bar-revenue">{revenue_format}</span>
                                     </div>
 """
             
@@ -643,61 +592,20 @@ def capture_html_screenshot(html_file, output_image):
     print(f"Đang chụp ảnh: {html_file}")
     
     try:
-        # Giảm width và quality để giảm size file
         options = {
             'format': 'png',
-            'width': 1400,  # Giảm từ 1920 xuống 1400
-            'quality': 75,   # Giảm từ 100 xuống 75
+            'width': 1920,
+            'quality': 100,
             'enable-local-file-access': None,
             'encoding': 'UTF-8',
         }
         
         imgkit.from_file(html_file, output_image, options=options)
-        
-        # Kiểm tra size file
-        file_size = os.path.getsize(output_image)
-        file_size_mb = file_size / (1024 * 1024)
-        print(f"✓ Đã lưu ảnh: {output_image} ({file_size_mb:.2f} MB)")
-        
-        # Nếu vẫn quá lớn (>10MB), nén thêm bằng PIL
-        if file_size_mb > 10:
-            print(f"  → File quá lớn, đang nén thêm...")
-            compress_image(output_image, output_image)
-            new_size = os.path.getsize(output_image) / (1024 * 1024)
-            print(f"  → Kích thước mới: {new_size:.2f} MB")
-        
+        print(f"✓ Đã lưu ảnh: {output_image}")
         return True
         
     except Exception as e:
         print(f"❌ Lỗi: {e}")
-        return False
-
-def compress_image(input_path, output_path, max_size_mb=10):
-    """Nén ảnh PNG xuống dưới max_size_mb"""
-    try:
-        from PIL import Image
-        
-        img = Image.open(input_path)
-        
-        # Convert RGBA to RGB nếu cần (để lưu JPEG)
-        if img.mode == 'RGBA':
-            # Tạo background trắng
-            background = Image.new('RGB', img.size, (255, 255, 255))
-            background.paste(img, mask=img.split()[3])  # 3 là alpha channel
-            img = background
-        
-        # Thử với quality khác nhau
-        for quality in [85, 75, 65, 55, 45]:
-            img.save(output_path, 'JPEG', quality=quality, optimize=True)
-            
-            file_size_mb = os.path.getsize(output_path) / (1024 * 1024)
-            if file_size_mb <= max_size_mb:
-                print(f"    ✓ Nén thành công với quality={quality}")
-                break
-        
-        return True
-    except Exception as e:
-        print(f"    ❌ Lỗi nén ảnh: {e}")
         return False
 
 # ==================== GỬI VÀO LARK ====================
@@ -711,11 +619,8 @@ def upload_image_to_lark(image_path):
     
     url = "https://open.larksuite.com/open-apis/im/v1/images"
     
-    # Xác định mime type
-    mime_type = 'image/jpeg' if image_path.endswith('.jpg') else 'image/png'
-    
     with open(image_path, 'rb') as f:
-        files = {'image': (os.path.basename(image_path), f, mime_type)}
+        files = {'image': (os.path.basename(image_path), f, 'image/png')}
         data = {'image_type': 'message'}
         headers = {'Authorization': f'Bearer {token}'}
         
@@ -861,7 +766,7 @@ if __name__ == "__main__":
         print(f"✓ HTML: {html_filename}")
         
         # Chụp ảnh
-        image_filename = html_filename.replace('.html', '.jpg')  # Đổi từ .png sang .jpg
+        image_filename = html_filename.replace('.html', '.png')
         if capture_html_screenshot(html_filename, image_filename):
             # Upload ảnh
             image_key = upload_image_to_lark(image_filename)
@@ -889,4 +794,3 @@ if __name__ == "__main__":
     print("\n" + "=" * 80)
     print("HOÀN THÀNH!")
     print("=" * 80)
-
