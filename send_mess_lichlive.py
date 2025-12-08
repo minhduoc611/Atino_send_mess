@@ -29,8 +29,7 @@ table_id = "tblwHEox2atpjNkp"
 
 # DANH SÁCH CÁC WEBHOOK - GỬI VÀO 2 GROUPS
 webhook_urls = [
-    "https://open.larksuite.com/open-apis/bot/v2/hook/ec2a7b8c-197a-42a9-8125-870d7f602ccb",
-    "https://open.larksuite.com/open-apis/bot/v2/hook/bf24d3f9-68f6-4fd3-9b0f-35e75c0b6c87"
+    "https://open.larksuite.com/open-apis/bot/v2/hook/175214ad-f698-45a6-89d3-45ff7453429d",
 ]
 
 # Tháng hiện tại
@@ -137,8 +136,6 @@ def process_livestream_data(records):
         live_end_utc = excel_date_to_datetime(excel_date_end)
         live_end = live_end_utc.replace(tzinfo=pytz.UTC).astimezone(VN_TZ)
         
-        live_end = excel_date_to_datetime(excel_date_end)
-        
         if live_start.month != TARGET_MONTH or live_start.year != TARGET_YEAR:
             continue
         if live_start.day > CURRENT_DAY:
@@ -155,26 +152,66 @@ def process_livestream_data(records):
         
         start_hour = live_start.hour + live_start.minute / 60.0 + live_start.second / 3600.0
         
+        # Xử lý livestream xuyên đêm
         if live_end.day > live_start.day:
-            end_hour = 24.0
-            duration = end_hour - start_hour
+            # Phần 1: Từ giờ bắt đầu đến 24h (ngày đầu)
+            end_hour_day1 = 24.0
+            duration_day1 = end_hour_day1 - start_hour
+            
+            data_list.append({
+                'Kênh': extract_text(fields.get('Kênh')),
+                'Tên đầy đủ': full_name,
+                'Tên ngắn': short_name,
+                'Ngày': live_start.day,
+                'Bắt đầu': live_start,
+                'Kết thúc': live_end,
+                'Giờ bắt đầu': start_hour,
+                'Giờ kết thúc': end_hour_day1,
+                'Thời lượng (giờ)': duration_day1,
+                'Doanh thu': revenue,
+                'Doanh thu (format)': format_revenue(revenue)
+            })
+            
+            # Phần 2: Từ 0h đến giờ kết thúc (ngày sau)
+            # Chỉ thêm nếu ngày kết thúc vẫn trong tháng và không vượt quá CURRENT_DAY
+            if (live_end.month == TARGET_MONTH and 
+                live_end.year == TARGET_YEAR and 
+                live_end.day <= CURRENT_DAY):
+                
+                end_hour_day2 = live_end.hour + live_end.minute / 60.0 + live_end.second / 3600.0
+                duration_day2 = end_hour_day2
+                
+                data_list.append({
+                    'Kênh': extract_text(fields.get('Kênh')),
+                    'Tên đầy đủ': full_name,
+                    'Tên ngắn': short_name,
+                    'Ngày': live_end.day,
+                    'Bắt đầu': live_start,
+                    'Kết thúc': live_end,
+                    'Giờ bắt đầu': 0.0,
+                    'Giờ kết thúc': end_hour_day2,
+                    'Thời lượng (giờ)': duration_day2,
+                    'Doanh thu': 0,  # Doanh thu chỉ tính ở ngày đầu
+                    'Doanh thu (format)': ''
+                })
         else:
+            # Livestream trong cùng ngày
             end_hour = live_end.hour + live_end.minute / 60.0 + live_end.second / 3600.0
             duration = end_hour - start_hour
-        
-        data_list.append({
-            'Kênh': extract_text(fields.get('Kênh')),
-            'Tên đầy đủ': full_name,
-            'Tên ngắn': short_name,
-            'Ngày': live_start.day,
-            'Bắt đầu': live_start,
-            'Kết thúc': live_end,
-            'Giờ bắt đầu': start_hour,
-            'Giờ kết thúc': end_hour,
-            'Thời lượng (giờ)': duration,
-            'Doanh thu': revenue,
-            'Doanh thu (format)': format_revenue(revenue)
-        })
+            
+            data_list.append({
+                'Kênh': extract_text(fields.get('Kênh')),
+                'Tên đầy đủ': full_name,
+                'Tên ngắn': short_name,
+                'Ngày': live_start.day,
+                'Bắt đầu': live_start,
+                'Kết thúc': live_end,
+                'Giờ bắt đầu': start_hour,
+                'Giờ kết thúc': end_hour,
+                'Thời lượng (giờ)': duration,
+                'Doanh thu': revenue,
+                'Doanh thu (format)': format_revenue(revenue)
+            })
     
     return pd.DataFrame(data_list)
 
@@ -548,10 +585,13 @@ def create_html_gantt(df, channel_name):
                 left_percent = (start / 24) * 100
                 width_percent = (duration / 24) * 100
                 
+                # Chỉ hiển thị revenue nếu có
+                revenue_html = f'<span class="bar-revenue">{revenue_format}</span>' if revenue_format else ''
+                
                 html += f"""                                    <div class="live-bar" 
                                          style="left: {left_percent:.2f}%; width: {width_percent:.2f}%; background: {color};">
                                         <span class="bar-name">{name}</span>
-                                        <span class="bar-revenue">{revenue_format}</span>
+                                        {revenue_html}
                                     </div>
 """
             
