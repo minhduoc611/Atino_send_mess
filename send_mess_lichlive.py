@@ -29,8 +29,8 @@ table_id = "tblwHEox2atpjNkp"
 
 # DANH SÁCH CÁC WEBHOOK - GỬI VÀO 2 GROUPS
 webhook_urls = [
-    "https://open.larksuite.com/open-apis/bot/v2/hook/ec2a7b8c-197a-42a9-8125-870d7f602ccb",
-    "https://open.larksuite.com/open-apis/bot/v2/hook/bf24d3f9-68f6-4fd3-9b0f-35e75c0b6c87"
+    "https://open.larksuite.com/open-apis/bot/v2/hook/175214ad-f698-45a6-89d3-45ff7453429d",
+
 ]
 
 # Tháng hiện tại
