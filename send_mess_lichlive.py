@@ -15,25 +15,6 @@ time.tzset() if hasattr(time, 'tzset') else None
 VN_TZ = pytz.timezone('Asia/Ho_Chi_Minh')
 
 # Sửa phần lấy thời gian hiện tại
-now = datetime.now(VN_TZ)
-TARGET_MONTH = now.month
-TARGET_YEAR = now.year
-CURRENT_DAY = now.day
-
-
-# ==================== CẤU HÌNH ====================
-app_id = "cli_a8620f964a38d02f"
-app_secret = "G3FdlSvmTAXZYX8SBZtfpckHUiWUCO4h"
-app_token = "AVY3bPgpja7Xwks2ht6lNGsnglc"
-table_id = "tblwHEox2atpjNkp"
-
-# DANH SÁCH CÁC WEBHOOK - GỬI VÀO 2 GROUPS
-webhook_urls = [
-    "https://open.larksuite.com/open-apis/bot/v2/hook/175214ad-f698-45a6-89d3-45ff7453429d",
-
-]
-
-# Tháng hiện tại
 now = datetime.now()
 TARGET_MONTH = now.month
 TARGET_YEAR = now.year
@@ -119,6 +100,10 @@ def process_livestream_data(records):
     VN_TZ = pytz.timezone('Asia/Ho_Chi_Minh')
     data_list = []
     
+    print("\n🕐 Kiểm tra múi giờ:")
+    print(f"   VN_TZ: {VN_TZ}")
+    print(f"   Thời gian hiện tại VN: {datetime.now(VN_TZ)}")
+    
     for record in records:
         fields = record.get('fields', {})
         
@@ -126,17 +111,18 @@ def process_livestream_data(records):
         if not timestamp_start:
             continue
         
-        # Convert timestamp to Vietnam timezone
+        # Convert timestamp to Vietnam timezone (GMT+7)
         live_start = datetime.fromtimestamp(timestamp_start / 1000, VN_TZ)
         
         excel_date_end = fields.get('Thời gian kết thúc')
         if not excel_date_end:
             continue
         
-        # Convert Excel date to Vietnam timezone
+        # Convert Excel date to datetime (UTC), then to Vietnam timezone (GMT+7)
         live_end_utc = excel_date_to_datetime(excel_date_end)
-        live_end = live_end_utc.replace(tzinfo=pytz.UTC).astimezone(VN_TZ)
+        live_end = pytz.UTC.localize(live_end_utc).astimezone(VN_TZ)
         
+        # Filter: only keep records in TARGET_MONTH/TARGET_YEAR
         if live_start.month != TARGET_MONTH or live_start.year != TARGET_YEAR:
             continue
         if live_start.day > CURRENT_DAY:
@@ -153,9 +139,9 @@ def process_livestream_data(records):
         
         start_hour = live_start.hour + live_start.minute / 60.0 + live_start.second / 3600.0
         
-        # Xử lý livestream xuyên đêm
+        # Xử lý livestream xuyên đêm - TÁCH THÀNH 2 RECORD (2 DÒNG RIÊNG BIỆT)
         if live_end.day > live_start.day:
-            # Phần 1: Từ giờ bắt đầu đến 24h (ngày đầu)
+            # RECORD 1: Từ giờ bắt đầu đến 24h (cuối ngày đầu)
             end_hour_day1 = 24.0
             duration_day1 = end_hour_day1 - start_hour
             
@@ -173,7 +159,7 @@ def process_livestream_data(records):
                 'Doanh thu (format)': format_revenue(revenue)
             })
             
-            # Phần 2: Từ 0h đến giờ kết thúc (ngày sau)
+            # RECORD 2: Từ 0h đến giờ kết thúc (đầu ngày sau) - DÒNG MỚI
             # Chỉ thêm nếu ngày kết thúc vẫn trong tháng và không vượt quá CURRENT_DAY
             if (live_end.month == TARGET_MONTH and 
                 live_end.year == TARGET_YEAR and 
@@ -186,7 +172,7 @@ def process_livestream_data(records):
                     'Kênh': extract_text(fields.get('Kênh')),
                     'Tên đầy đủ': full_name,
                     'Tên ngắn': short_name,
-                    'Ngày': live_end.day,
+                    'Ngày': live_end.day,  # ⭐ NGÀY MỚI - hiển thị ở dòng ngày mới
                     'Bắt đầu': live_start,
                     'Kết thúc': live_end,
                     'Giờ bắt đầu': 0.0,
@@ -195,8 +181,13 @@ def process_livestream_data(records):
                     'Doanh thu': 0,  # Doanh thu chỉ tính ở ngày đầu
                     'Doanh thu (format)': ''
                 })
+                
+                # Debug log cho livestream xuyên đêm
+                print(f"\n   🌙 Livestream xuyên đêm: {short_name}")
+                print(f"      Ngày {live_start.day}: {live_start.strftime('%H:%M')} → 24:00 (revenue: {format_revenue(revenue)})")
+                print(f"      Ngày {live_end.day}: 00:00 → {live_end.strftime('%H:%M')}")
         else:
-            # Livestream trong cùng ngày
+            # Livestream trong cùng ngày - CHỈ 1 RECORD (1 DÒNG)
             end_hour = live_end.hour + live_end.minute / 60.0 + live_end.second / 3600.0
             duration = end_hour - start_hour
             
@@ -879,3 +870,4 @@ if __name__ == "__main__":
     print("\n" + "=" * 80)
     print("HOÀN THÀNH!")
     print("=" * 80)
+
