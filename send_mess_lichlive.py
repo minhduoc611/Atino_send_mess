@@ -15,6 +15,25 @@ time.tzset() if hasattr(time, 'tzset') else None
 VN_TZ = pytz.timezone('Asia/Ho_Chi_Minh')
 
 # Sửa phần lấy thời gian hiện tại
+now = datetime.now(VN_TZ)
+TARGET_MONTH = now.month
+TARGET_YEAR = now.year
+CURRENT_DAY = now.day
+
+
+# ==================== CẤU HÌNH ====================
+app_id = "cli_a8620f964a38d02f"
+app_secret = "G3FdlSvmTAXZYX8SBZtfpckHUiWUCO4h"
+app_token = "AVY3bPgpja7Xwks2ht6lNGsnglc"
+table_id = "tblwHEox2atpjNkp"
+
+# DANH SÁCH CÁC WEBHOOK - GỬI VÀO 2 GROUPS
+webhook_urls = [
+    "https://open.larksuite.com/open-apis/bot/v2/hook/ec2a7b8c-197a-42a9-8125-870d7f602ccb",
+    "https://open.larksuite.com/open-apis/bot/v2/hook/bf24d3f9-68f6-4fd3-9b0f-35e75c0b6c87"
+]
+
+# Tháng hiện tại
 now = datetime.now()
 TARGET_MONTH = now.month
 TARGET_YEAR = now.year
