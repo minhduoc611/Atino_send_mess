@@ -3,10 +3,10 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 import time
-import os
 import pytz
-from datetime import datetime, timedelta
 import imgkit
+from PIL import Image
+
 # Set timezone Vietnam
 os.environ['TZ'] = 'Asia/Ho_Chi_Minh'
 time.tzset() if hasattr(time, 'tzset') else None
@@ -29,7 +29,8 @@ table_id = "tblwHEox2atpjNkp"
 
 # DANH SÁCH CÁC WEBHOOK - GỬI VÀO 2 GROUPS
 webhook_urls = [
-    "https://open.larksuite.com/open-apis/bot/v2/hook/175214ad-f698-45a6-89d3-45ff7453429d",
+    "https://open.larksuite.com/open-apis/bot/v2/hook/ec2a7b8c-197a-42a9-8125-870d7f602ccb",
+    "https://open.larksuite.com/open-apis/bot/v2/hook/bf24d3f9-68f6-4fd3-9b0f-35e75c0b6c87"
 ]
 
 # Tháng hiện tại
@@ -632,20 +633,61 @@ def capture_html_screenshot(html_file, output_image):
     print(f"Đang chụp ảnh: {html_file}")
     
     try:
+        # Giảm width và quality để giảm size file
         options = {
             'format': 'png',
-            'width': 1920,
-            'quality': 100,
+            'width': 1400,  # Giảm từ 1920 xuống 1400
+            'quality': 75,   # Giảm từ 100 xuống 75
             'enable-local-file-access': None,
             'encoding': 'UTF-8',
         }
         
         imgkit.from_file(html_file, output_image, options=options)
-        print(f"✓ Đã lưu ảnh: {output_image}")
+        
+        # Kiểm tra size file
+        file_size = os.path.getsize(output_image)
+        file_size_mb = file_size / (1024 * 1024)
+        print(f"✓ Đã lưu ảnh: {output_image} ({file_size_mb:.2f} MB)")
+        
+        # Nếu vẫn quá lớn (>10MB), nén thêm bằng PIL
+        if file_size_mb > 10:
+            print(f"  → File quá lớn, đang nén thêm...")
+            compress_image(output_image, output_image)
+            new_size = os.path.getsize(output_image) / (1024 * 1024)
+            print(f"  → Kích thước mới: {new_size:.2f} MB")
+        
         return True
         
     except Exception as e:
         print(f"❌ Lỗi: {e}")
+        return False
+
+def compress_image(input_path, output_path, max_size_mb=10):
+    """Nén ảnh PNG xuống dưới max_size_mb"""
+    try:
+        from PIL import Image
+        
+        img = Image.open(input_path)
+        
+        # Convert RGBA to RGB nếu cần (để lưu JPEG)
+        if img.mode == 'RGBA':
+            # Tạo background trắng
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            background.paste(img, mask=img.split()[3])  # 3 là alpha channel
+            img = background
+        
+        # Thử với quality khác nhau
+        for quality in [85, 75, 65, 55, 45]:
+            img.save(output_path, 'JPEG', quality=quality, optimize=True)
+            
+            file_size_mb = os.path.getsize(output_path) / (1024 * 1024)
+            if file_size_mb <= max_size_mb:
+                print(f"    ✓ Nén thành công với quality={quality}")
+                break
+        
+        return True
+    except Exception as e:
+        print(f"    ❌ Lỗi nén ảnh: {e}")
         return False
 
 # ==================== GỬI VÀO LARK ====================
@@ -659,8 +701,11 @@ def upload_image_to_lark(image_path):
     
     url = "https://open.larksuite.com/open-apis/im/v1/images"
     
+    # Xác định mime type
+    mime_type = 'image/jpeg' if image_path.endswith('.jpg') else 'image/png'
+    
     with open(image_path, 'rb') as f:
-        files = {'image': (os.path.basename(image_path), f, 'image/png')}
+        files = {'image': (os.path.basename(image_path), f, mime_type)}
         data = {'image_type': 'message'}
         headers = {'Authorization': f'Bearer {token}'}
         
@@ -806,7 +851,7 @@ if __name__ == "__main__":
         print(f"✓ HTML: {html_filename}")
         
         # Chụp ảnh
-        image_filename = html_filename.replace('.html', '.png')
+        image_filename = html_filename.replace('.html', '.jpg')  # Đổi từ .png sang .jpg
         if capture_html_screenshot(html_filename, image_filename):
             # Upload ảnh
             image_key = upload_image_to_lark(image_filename)
