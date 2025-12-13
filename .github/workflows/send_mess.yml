@@ -50,6 +50,18 @@ jobs:
       continue-on-error: true
       env:
         TZ: Asia/Ho_Chi_Minh
+        
+    - name: Run send_mess_vipham.py
+      run: python send_mess_vipham.py
+      continue-on-error: true
+      env:
+        TZ: Asia/Ho_Chi_Minh
+        
+    - name: Run send_mess_program.py
+      run: python send_mess_program.py
+      continue-on-error: true
+      env:
+        TZ: Asia/Ho_Chi_Minh
     
 
     
