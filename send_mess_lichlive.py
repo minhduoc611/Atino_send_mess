@@ -7,6 +7,7 @@ import os
 import pytz
 from datetime import datetime, timedelta
 import imgkit
+from PIL import Image
 # Set timezone Vietnam
 os.environ['TZ'] = 'Asia/Ho_Chi_Minh'
 time.tzset() if hasattr(time, 'tzset') else None
@@ -584,8 +585,54 @@ def create_html_gantt(df, channel_name):
     
     return html
 
-# ==================== CHỤP ẢNH MÀN HÌNH ====================
-import imgkit
+# ==================== CHỤP ẢNH VÀ NÉN ====================
+def compress_image(image_path, output_path, quality=75, max_width=1600):
+    """
+    Nén ảnh để giảm dung lượng
+    - Chuyển sang JPEG (nhẹ hơn PNG rất nhiều)
+    - Giảm chất lượng xuống mức vừa phải
+    - Resize nếu quá lớn
+    """
+    print(f"Đang nén ảnh: {image_path}")
+    
+    try:
+        # Mở ảnh
+        img = Image.open(image_path)
+        
+        # Lấy kích thước gốc
+        width, height = img.size
+        print(f"   Kích thước gốc: {width}x{height}px")
+        
+        # Resize nếu quá rộng
+        if width > max_width:
+            ratio = max_width / width
+            new_height = int(height * ratio)
+            img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
+            print(f"   Resize xuống: {max_width}x{new_height}px")
+        
+        # Convert sang RGB nếu là RGBA (cần thiết cho JPEG)
+        if img.mode == 'RGBA':
+            rgb_img = Image.new('RGB', img.size, (255, 255, 255))
+            rgb_img.paste(img, mask=img.split()[3])  # Paste using alpha channel
+            img = rgb_img
+        
+        # Lưu dưới dạng JPEG với chất lượng vừa phải
+        img.save(output_path, 'JPEG', quality=quality, optimize=True)
+        
+        # Kiểm tra dung lượng
+        original_size = os.path.getsize(image_path) / 1024  # KB
+        compressed_size = os.path.getsize(output_path) / 1024  # KB
+        reduction = ((original_size - compressed_size) / original_size) * 100
+        
+        print(f"   Dung lượng gốc: {original_size:.1f} KB")
+        print(f"   Dung lượng nén: {compressed_size:.1f} KB")
+        print(f"   Giảm: {reduction:.1f}%")
+        
+        return True
+        
+    except Exception as e:
+        print(f"   ❌ Lỗi nén ảnh: {e}")
+        return False
 
 def capture_html_screenshot(html_file, output_image):
     """Chụp ảnh màn hình từ file HTML"""
@@ -600,9 +647,21 @@ def capture_html_screenshot(html_file, output_image):
             'encoding': 'UTF-8',
         }
         
-        imgkit.from_file(html_file, output_image, options=options)
-        print(f"✓ Đã lưu ảnh: {output_image}")
-        return True
+        # Tạo file PNG tạm
+        temp_png = output_image.replace('.jpg', '_temp.png')
+        imgkit.from_file(html_file, temp_png, options=options)
+        print(f"✓ Đã chụp ảnh tạm: {temp_png}")
+        
+        # Nén ảnh sang JPEG
+        if compress_image(temp_png, output_image, quality=75, max_width=1600):
+            # Xóa file PNG tạm
+            try:
+                os.remove(temp_png)
+            except:
+                pass
+            return True
+        else:
+            return False
         
     except Exception as e:
         print(f"❌ Lỗi: {e}")
@@ -620,7 +679,9 @@ def upload_image_to_lark(image_path):
     url = "https://open.larksuite.com/open-apis/im/v1/images"
     
     with open(image_path, 'rb') as f:
-        files = {'image': (os.path.basename(image_path), f, 'image/png')}
+        # Xác định media type dựa trên extension
+        media_type = 'image/jpeg' if image_path.endswith('.jpg') else 'image/png'
+        files = {'image': (os.path.basename(image_path), f, media_type)}
         data = {'image_type': 'message'}
         headers = {'Authorization': f'Bearer {token}'}
         
@@ -725,7 +786,7 @@ def send_all_to_lark_webhooks(image_keys_data, total_df):
 # ==================== MAIN ====================
 if __name__ == "__main__":
     print("=" * 80)
-    print("TẠO GANTT CHART VÀ GỬI VÀO LARK")
+    print("TẠO GANTT CHART VÀ GỬI VÀO LARK (VỚI NÉN ẢNH)")
     print("=" * 80)
     
     # 1. Lấy dữ liệu
@@ -765,8 +826,8 @@ if __name__ == "__main__":
             f.write(html_content)
         print(f"✓ HTML: {html_filename}")
         
-        # Chụp ảnh
-        image_filename = html_filename.replace('.html', '.png')
+        # Chụp ảnh và nén (lưu dưới dạng .jpg thay vì .png)
+        image_filename = html_filename.replace('.html', '.jpg')
         if capture_html_screenshot(html_filename, image_filename):
             # Upload ảnh
             image_key = upload_image_to_lark(image_filename)
