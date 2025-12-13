@@ -448,7 +448,7 @@ def main():
     app_secret = "G3FdlSvmTAXZYX8SBZtfpckHUiWUCO4h"
     app_token = "AVY3bPgpja7Xwks2ht6lNGsnglc"
     table_id = "tbluOxVXn0oyPNKa"
-    webhook_url = "https://open.larksuite.com/open-apis/bot/v2/hook/175214ad-f698-45a6-89d3-45ff7453429d"
+    webhook_url = "https://open.larksuite.com/open-apis/bot/v2/hook/ec2a7b8c-197a-42a9-8125-870d7f602ccb"
     
     sender = LarkBaseAlertSender(
         app_id=app_id,
