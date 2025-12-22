@@ -709,7 +709,7 @@ def send_all_to_lark_webhooks(image_keys_data, total_df):
             "tag": "div",
             "text": {
                 "tag": "lark_md",
-                "content": f"**Lịch Livestream - Tháng {TARGET_MONTH}/{TARGET_YEAR}**\n\nTừ ngày 1/{TARGET_MONTH} đến {CURRENT_DAY}/{TARGET_MONTH}\n\nTổng doanh thu: **{total_revenue:,.0f} VNĐ**\nTổng phiên live: **{total_sessions}**"
+                "content": f"**6. Lịch Livestream - Tháng {TARGET_MONTH}/{TARGET_YEAR}**\n\nTừ ngày 1/{TARGET_MONTH} đến {CURRENT_DAY}/{TARGET_MONTH}\n\nTổng doanh thu: **{total_revenue:,.0f} VNĐ**\nTổng phiên live: **{total_sessions}**"
             }
         },
         {
