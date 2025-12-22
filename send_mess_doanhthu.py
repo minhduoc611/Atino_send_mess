@@ -312,7 +312,7 @@ def send_image_to_webhooks(image_key, webhook_urls):
         "card": {
             "header": {
                 "template": "blue",
-                "title": {"tag": "plain_text", "content": f"📊 Doanh thu Thực tế từ 1/{CURRENT_MONTH} - {YESTERDAY_DAY}/{CURRENT_MONTH}"}
+                "title": {"tag": "plain_text", "content": f"📊 5.Doanh thu Thực tế từ 1/{CURRENT_MONTH} - {YESTERDAY_DAY}/{CURRENT_MONTH}"}
             },
             "elements": [
                 {
