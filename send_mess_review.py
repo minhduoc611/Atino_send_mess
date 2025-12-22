@@ -316,7 +316,7 @@ def send_image_to_webhooks(image_key, webhook_urls, df, threshold):
                 "template": "red",
                 "title": {
                     "tag": "plain_text", 
-                    "content": f"Báo cáo Review Tiêu cực sản phẩm TikTok Shop"
+                    "content": f"7. Báo cáo Review Tiêu cực sản phẩm TikTok Shop"
                 }
             },
             "elements": [
