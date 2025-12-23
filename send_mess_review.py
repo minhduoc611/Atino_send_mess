@@ -74,7 +74,7 @@ class LarkBaseAPI:
             
             if result.get('code') == 0:
                 data = result.get('data', {})
-                records = data.get('items', [])
+                records = data.get('items'or [])
                 all_records.extend(records)
                 
                 page_token = data.get('page_token')
