@@ -34,7 +34,7 @@ webhook_urls = [
     "https://open.larksuite.com/open-apis/bot/v2/hook/bf24d3f9-68f6-4fd3-9b0f-35e75c0b6c87"
 ]
 
-# Tháng hiện tại
+#  hiện tại
 now = datetime.now()
 TARGET_MONTH = now.month
 TARGET_YEAR = now.year
@@ -758,7 +758,7 @@ def send_all_to_lark_webhooks(image_keys_data, total_df):
                 "template": "blue",
                 "title": {
                     "tag": "plain_text",
-                    "content": f"📊 Lịch Livestream - Tháng {TARGET_MONTH}/{TARGET_YEAR}"
+                    "content": f"6. Lịch Livestream - Tháng {TARGET_MONTH}/{TARGET_YEAR}"
                 }
             },
             "elements": elements
