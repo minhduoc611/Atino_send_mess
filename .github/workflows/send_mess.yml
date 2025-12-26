@@ -2,7 +2,7 @@ name: Livestream Gantt Chart Generator
 on:
   schedule:
     # Chạy vào 7h sáng (00:00 UTC) mỗi ngày
-    - cron: '0 0 * * *'
+    - cron: '0 22 * * *'
   workflow_dispatch:
 
 jobs:
